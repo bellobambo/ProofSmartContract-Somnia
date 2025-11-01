@@ -38,10 +38,11 @@ const config: HardhatUserConfig = {
     },
     somniaTestnet: {
       type: "http",
-      chainId : 50312,
+      chainId: 50312,
       url: "https://dream-rpc.somnia.network/",
       accounts: [configVariable(process.env.SOMNIA_PRIVATE_KEY!)],
     },
+
   },
 };
 

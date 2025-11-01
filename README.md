@@ -58,3 +58,9 @@ npx hardhat ignition deploy --network sepolia ignition/modules/Counter.ts
 # ProofSmartContract-Somnia
 # ProofSmartContract-Somnia
 # ProofSmartContract-Somnia
+
+
+
+Deployed Addresses
+
+ProofModule#ProofSmartContract - 0xcDFb1272Fad230337C553e8c5649d5C5cf361f03
