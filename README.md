@@ -63,4 +63,4 @@ npx hardhat ignition deploy --network sepolia ignition/modules/Counter.ts
 
 Deployed Addresses
 
-ProofModule#ProofSmartContract - 0xcDFb1272Fad230337C553e8c5649d5C5cf361f03
+ProofModule#ProofSmartContract - 0x679fe529386Cf51cdE8bAe21FE9Bb9099E4B4Bd4

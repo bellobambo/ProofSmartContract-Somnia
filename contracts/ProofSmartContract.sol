@@ -18,6 +18,7 @@ contract ProofSmartContract {
         uint256 courseId;
         string title;
         address tutor;
+        string tutorName;
         bool isActive;
     }
 
@@ -34,7 +35,7 @@ contract ProofSmartContract {
         uint256 examId;
         address student;
         bool[] answers; // true/false answers
-        uint256 score;
+        uint256 score; // raw score (number of correct answers)
         bool isCompleted;
     }
 
@@ -118,6 +119,7 @@ contract ProofSmartContract {
             courseId: courseId,
             title: title,
             tutor: msg.sender,
+            tutorName: users[msg.sender].name,
             isActive: true
         });
 
@@ -143,6 +145,18 @@ contract ProofSmartContract {
         }
         
         return activeCourses;
+    }
+
+    // Get course with lecturer name
+    function getCourseWithLecturer(uint256 courseId) public view courseExists(courseId) returns (
+        uint256 id,
+        string memory title,
+        address tutor,
+        string memory tutorName,
+        bool isActive
+    ) {
+        Course storage course = courses[courseId];
+        return (course.courseId, course.title, course.tutor, course.tutorName, course.isActive);
     }
 
     function enrollInCourse(uint256 courseId) public onlyStudent courseExists(courseId) {
@@ -207,15 +221,20 @@ contract ProofSmartContract {
         return questionTexts;
     }
 
-    // Assessment System Functions - Simplified
-    function takeExam(uint256 examId, bool[] memory answers) public onlyStudent examExists(examId) {
+    // Assessment System Functions - Returns raw score
+    function takeExam(uint256 examId, bool[] memory answers) public onlyStudent examExists(examId) returns (uint256 rawScore) {
         Exam storage exam = exams[examId];
         
         require(courseEnrollments[exam.courseId][msg.sender], "Not enrolled in course");
-        require(!examSessions[examId][msg.sender].isCompleted, "Exam already completed");
+        
+        // Check if exam already completed and return previous score
+        if (examSessions[examId][msg.sender].isCompleted) {
+            return examSessions[examId][msg.sender].score;
+        }
+        
         require(answers.length == exam.questionCount, "Answer count mismatch");
 
-        // Calculate score
+        // Calculate raw score by comparing student answers with correct answers
         uint256 correctAnswers = 0;
         for (uint256 i = 0; i < exam.questionCount; i++) {
             if (answers[i] == examCorrectAnswers[examId][i]) {
@@ -223,22 +242,23 @@ contract ProofSmartContract {
             }
         }
 
-        uint256 scorePercentage = (correctAnswers * 100) / exam.questionCount;
+        rawScore = correctAnswers;
 
         // Store exam session
         examSessions[examId][msg.sender] = ExamSession({
             examId: examId,
             student: msg.sender,
             answers: answers,
-            score: scorePercentage,
+            score: rawScore,
             isCompleted: true
         });
 
-        emit ExamCompleted(examId, msg.sender, scorePercentage);
+        emit ExamCompleted(examId, msg.sender, rawScore);
+        return rawScore;
     }
 
     function getExamResults(uint256 examId, address student) public view examExists(examId) returns (
-        uint256 score,
+        uint256 rawScore,
         bool[] memory answers,
         bool isCompleted
     ) {
@@ -250,6 +270,23 @@ contract ProofSmartContract {
 
         ExamSession storage session = examSessions[examId][student];
         return (session.score, session.answers, session.isCompleted);
+    }
+
+    // Check if student has already completed an exam
+    function hasCompletedExam(uint256 examId, address student) public view examExists(examId) returns (bool) {
+        return examSessions[examId][student].isCompleted;
+    }
+
+    // Get student's exam score - returns raw score (number of correct answers)
+    function getStudentExamScore(uint256 examId, address student) public view examExists(examId) returns (uint256 rawScore, bool isCompleted) {
+        require(
+            msg.sender == student || 
+            (registeredUsers[msg.sender] && users[msg.sender].role == Role.TUTOR),
+            "Unauthorized access"
+        );
+        
+        ExamSession storage session = examSessions[examId][student];
+        return (session.score, session.isCompleted);
     }
 
     // Helper Functions
@@ -299,5 +336,39 @@ contract ProofSmartContract {
         }
 
         return availableExams;
+    }
+
+    // Get exams with completion status for a student
+    function getExamsWithStatusForStudent(address student) public view returns (
+        Exam[] memory availableExams,
+        bool[] memory completionStatus,
+        uint256[] memory scores
+    ) {
+        Exam[] memory allExams = new Exam[](examCounter);
+        bool[] memory allCompletionStatus = new bool[](examCounter);
+        uint256[] memory allScores = new uint256[](examCounter);
+        uint256 availableCount = 0;
+
+        for (uint256 i = 0; i < examCounter; i++) {
+            if (exams[i].isActive && courseEnrollments[exams[i].courseId][student]) {
+                allExams[availableCount] = exams[i];
+                allCompletionStatus[availableCount] = examSessions[i][student].isCompleted;
+                allScores[availableCount] = examSessions[i][student].score;
+                availableCount++;
+            }
+        }
+
+        // Resize arrays to only include available exams
+        availableExams = new Exam[](availableCount);
+        completionStatus = new bool[](availableCount);
+        scores = new uint256[](availableCount);
+        
+        for (uint256 i = 0; i < availableCount; i++) {
+            availableExams[i] = allExams[i];
+            completionStatus[i] = allCompletionStatus[i];
+            scores[i] = allScores[i];
+        }
+
+        return (availableExams, completionStatus, scores);
     }
 }
