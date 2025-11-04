@@ -34,7 +34,7 @@ contract ProofSmartContract {
     struct ExamSession {
         uint256 examId;
         address student;
-        bool[] answers; // true/false answers
+        uint256[] answers; // multiple choice answers (0-3)
         uint256 score; // raw score (number of correct answers)
         bool isCompleted;
     }
@@ -49,9 +49,10 @@ contract ProofSmartContract {
     mapping(uint256 => Exam) public exams;
     mapping(uint256 => uint256[]) public courseExams;
 
-    // Simple true/false questions
+    // Multiple choice questions (4 options each)
     mapping(uint256 => mapping(uint256 => string)) public examQuestions; // examId => questionIndex => questionText
-    mapping(uint256 => mapping(uint256 => bool)) public examCorrectAnswers; // examId => questionIndex => correct answer (true/false)
+    mapping(uint256 => mapping(uint256 => string[4])) public examOptions; // examId => questionIndex => [option0, option1, option2, option3]
+    mapping(uint256 => mapping(uint256 => uint256)) public examCorrectAnswers; // examId => questionIndex => correct answer index (0-3)
 
     mapping(uint256 => mapping(address => ExamSession)) public examSessions;
 
@@ -169,17 +170,19 @@ contract ProofSmartContract {
         return courseEnrollments[courseId][student];
     }
 
-    // Exam Management Functions - Simplified True/False System
+    // Exam Management Functions - Multiple Choice System (4 options)
     function createExam(
         uint256 courseId,
         string memory title,
         string[] memory questionTexts,
-        bool[] memory correctAnswers
+        string[4][] memory questionOptions, // Array of 4-option arrays
+        uint256[] memory correctAnswers // Correct answer indices (0-3)
     ) public onlyTutor courseExists(courseId) {
         require(courses[courseId].tutor == msg.sender, "Not course owner");
         require(bytes(title).length > 0, "Title cannot be empty");
         require(questionTexts.length > 0, "At least one question required");
-        require(questionTexts.length == correctAnswers.length, "Array length mismatch");
+        require(questionTexts.length == questionOptions.length, "Question-options length mismatch");
+        require(questionTexts.length == correctAnswers.length, "Question-answers length mismatch");
 
         uint256 examId = examCounter;
 
@@ -192,10 +195,18 @@ contract ProofSmartContract {
             creator: msg.sender
         });
 
-        // Store questions and correct answers
+        // Store questions, options, and correct answers
         for (uint256 i = 0; i < questionTexts.length; i++) {
             require(bytes(questionTexts[i]).length > 0, "Question text cannot be empty");
+            require(correctAnswers[i] < 4, "Correct answer index must be 0-3");
+            
+            // Validate all options are non-empty
+            for (uint256 j = 0; j < 4; j++) {
+                require(bytes(questionOptions[i][j]).length > 0, "Option text cannot be empty");
+            }
+            
             examQuestions[examId][i] = questionTexts[i];
+            examOptions[examId][i] = questionOptions[i];
             examCorrectAnswers[examId][i] = correctAnswers[i];
         }
 
@@ -209,20 +220,25 @@ contract ProofSmartContract {
         return courseExams[courseId];
     }
 
-    // Get all questions for an exam (without correct answers for students)
-    function getExamQuestions(uint256 examId) public view examExists(examId) returns (string[] memory) {
+    // Get all questions and options for an exam (without correct answers for students)
+    function getExamQuestions(uint256 examId) public view examExists(examId) returns (
+        string[] memory questionTexts,
+        string[4][] memory questionOptions
+    ) {
         Exam storage exam = exams[examId];
-        string[] memory questionTexts = new string[](exam.questionCount);
+        questionTexts = new string[](exam.questionCount);
+        questionOptions = new string[4][](exam.questionCount);
 
         for (uint256 i = 0; i < exam.questionCount; i++) {
             questionTexts[i] = examQuestions[examId][i];
+            questionOptions[i] = examOptions[examId][i];
         }
 
-        return questionTexts;
+        return (questionTexts, questionOptions);
     }
 
     // Assessment System Functions - Returns raw score
-    function takeExam(uint256 examId, bool[] memory answers) public onlyStudent examExists(examId) returns (uint256 rawScore) {
+    function takeExam(uint256 examId, uint256[] memory answers) public onlyStudent examExists(examId) returns (uint256 rawScore) {
         Exam storage exam = exams[examId];
         
         require(courseEnrollments[exam.courseId][msg.sender], "Not enrolled in course");
@@ -233,6 +249,11 @@ contract ProofSmartContract {
         }
         
         require(answers.length == exam.questionCount, "Answer count mismatch");
+
+        // Validate answer indices are within range (0-3)
+        for (uint256 i = 0; i < answers.length; i++) {
+            require(answers[i] < 4, "Answer index must be 0-3");
+        }
 
         // Calculate raw score by comparing student answers with correct answers
         uint256 correctAnswers = 0;
@@ -259,7 +280,7 @@ contract ProofSmartContract {
 
     function getExamResults(uint256 examId, address student) public view examExists(examId) returns (
         uint256 rawScore,
-        bool[] memory answers,
+        uint256[] memory answers,
         bool isCompleted
     ) {
         require(
@@ -287,6 +308,20 @@ contract ProofSmartContract {
         
         ExamSession storage session = examSessions[examId][student];
         return (session.score, session.isCompleted);
+    }
+
+    // Get correct answers for an exam (only for tutors)
+    function getExamCorrectAnswers(uint256 examId) public view examExists(examId) returns (uint256[] memory) {
+        require(registeredUsers[msg.sender] && users[msg.sender].role == Role.TUTOR, "Only tutors can access correct answers");
+        
+        Exam storage exam = exams[examId];
+        uint256[] memory correctAnswers = new uint256[](exam.questionCount);
+        
+        for (uint256 i = 0; i < exam.questionCount; i++) {
+            correctAnswers[i] = examCorrectAnswers[examId][i];
+        }
+        
+        return correctAnswers;
     }
 
     // Helper Functions

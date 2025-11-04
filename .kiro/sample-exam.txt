@@ -1,0 +1,37 @@
+EXAM_TITLE: Introduction to Blockchain Fundamentals
+COURSE_ID: 1
+
+QUESTION_1: What is a blockchain?
+A) A type of database that stores data in a linear fashion
+B) A distributed ledger technology that maintains a continuously growing list of records
+C) A programming language used for web development
+D) A type of cryptocurrency exchange
+CORRECT_ANSWER: B
+
+QUESTION_2: What does "decentralized" mean in the context of blockchain?
+A) The system is controlled by a single central authority
+B) The system has no users
+C) The system operates across multiple nodes without a central controlling authority
+D) The system only works offline
+CORRECT_ANSWER: C
+
+QUESTION_3: What is a smart contract?
+A) A legal document written by lawyers
+B) A self-executing contract with terms directly written into code
+C) A type of cryptocurrency
+D) A blockchain mining algorithm
+CORRECT_ANSWER: B
+
+QUESTION_4: Which of the following is a key characteristic of blockchain technology?
+A) Mutability of records
+B) Central control
+C) Immutability of records
+D) Offline operation only
+CORRECT_ANSWER: C
+
+QUESTION_5: What is the purpose of consensus mechanisms in blockchain?
+A) To make transactions faster
+B) To ensure all nodes agree on the validity of transactions
+C) To create new cryptocurrencies
+D) To store data more efficiently
+CORRECT_ANSWER: B
