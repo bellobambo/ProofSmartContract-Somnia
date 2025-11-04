@@ -46,7 +46,7 @@ const config: HardhatUserConfig = {
       type: "http",
       chainId: 50312,
       url: "https://dream-rpc.somnia.network/",
-      accounts: [configVariable(process.env.SOMNIA_PRIVATE_KEY!)],
+      accounts: ["41315ad00913672d14f312b439f68050582ff8ea7e332a640490c1e53449398e"],
     },
 
   },

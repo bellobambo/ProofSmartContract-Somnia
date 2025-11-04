@@ -38,4 +38,4 @@ npx hardhat ignition deploy --network somniaTestnet ignition/modules/ProofSmartC
 
 ## 🌐 Deployed Addresses
 
-**Somnia Testnet**: `0x2b7f7552E3B5902c2d1dAE65664ABE93F9d45795`
+**Somnia Testnet**: `0x51508a90A7B73bf3D7dD69b7327d515195623F64`
