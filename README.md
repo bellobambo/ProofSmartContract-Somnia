@@ -1,6 +1,6 @@
 # ProofSmartContract 📚
 
-Proof is a comprehensive blockchain-based Learning Management System platform that enables tutors to create courses and assessment while providing students with a secure, transparent evaluation system. Built with Solidity and deployed on the Somnia testnet.
+Proof is a comprehensive blockchain-based Learning Management System platform that enables tutors to create courses and assessment while providing students with a secure, transparent evaluation system. Built with Solidity and deployed on the Somnia testnet using Amazon Kiro for the Creation of the core Smart Contract Logic.
 
 ## 🎯 What It Does
 
